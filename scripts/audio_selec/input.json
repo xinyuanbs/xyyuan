@@ -1,0 +1,47 @@
+{
+    "begin": "2024-10-28 12:00:00.000",
+    "end": "2024-10-28 12:15:00.000",
+    "uploadHost": "192.168.1.151:41184",
+    "uploadUser": "minioadmin",
+    "uploadPasswd": "minioadmin",
+    "uploadBucket": "bsyb",
+    "uploadObject": "20241028/combined_audio.wav",
+    "list": [
+        {
+            "sourceUuid": "1284393363537133526",
+            "filePath": "http://192.168.1.151:41184/bsyb/20241015/en_46_8k.wav",
+            "sampleMachine": "m01",
+            "beginTime": "2024-10-28 12:00:01.000"
+        },
+        {
+            "sourceUuid": "1284393363537133526",
+            "filePath": "http://192.168.1.151:41184/bsyb/20241015/en_46_8k.wav",
+            "sampleMachine": "m02",
+            "beginTime": "2024-10-28 12:00:04.000"
+        },
+        {
+            "sourceUuid": "1284393363537133526",
+            "filePath": "http://192.168.1.151:41184/bsyb/20241015/en_46_8k.wav",
+            "sampleMachine": "m01",
+            "beginTime": "2024-10-28 12:00:11.000"
+        },
+        {
+            "sourceUuid": "1284393363537133526",
+            "filePath": "http://192.168.1.151:41184/bsyb/20241015/en_46_8k.wav",
+            "sampleMachine": "m02",
+            "beginTime": "2024-10-28 12:00:08.000"
+        },
+        {
+            "sourceUuid": "1284393363537133526",
+            "filePath": "http://192.168.1.151:41184/bsyb/20241015/en_46_8k.wav",
+            "sampleMachine": "m03",
+            "beginTime": "2024-10-28 12:00:02.000"
+        },
+        {
+            "sourceUuid": "1284393363537133526",
+            "filePath": "http://192.168.1.151:41184/bsyb/20241015/en_46_8k.wav",
+            "sampleMachine": "m01",
+            "beginTime": "2024-10-28 12:00:10.000"
+        }
+    ]
+}
