@@ -1,21 +1,20 @@
-from flask import Flask, request, jsonify
-from io import BytesIO
-from datetime import datetime, timedelta
-from pydub import AudioSegment
-from minio import Minio
-from urllib.parse import urlparse
 import os
+import logging
+from minio import Minio
+from io import BytesIO
+from pydub import AudioSegment
+from urllib.parse import urlparse
+from datetime import datetime, timedelta
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def download_audio_from_minio(minio_url):
     parsed_url = urlparse(minio_url)
     path_parts = parsed_url.path.lstrip("/").split("/", 1)
     if len(path_parts) < 1:
-        # print("Error: No bucket name found in the URL.")
         logging.error(f"Error: No bucket name found in the URL.")
         return None, 0
 
@@ -39,7 +38,6 @@ def download_audio_from_minio(minio_url):
         return audio, len(audio)
     
     except Exception as e:
-        # print("Error:", e)
         logging.error(f"Error downloading audio: {e}")
         return None, 0
 
@@ -60,7 +58,6 @@ def audio_selec(input_json):
     trim_tmp = 0
     for item in input_json["list"]:
         file_path = item["filePath"]
-        # print(f"file_path:{file_path}")
         logging.info(f"file_path:{file_path}")
         begin_time_item = str_to_datetime(item["beginTime"]) # audio segment begin
 
@@ -70,23 +67,24 @@ def audio_selec(input_json):
 
         if audio_item is None:
             return None, None
+        logging.info(f"segment begin time:{begin_time_item}")
         logging.info(f"audio_item_length_ms:{audio_item_length_ms}")
         end_time_item = begin_time_item + timedelta(milliseconds=audio_item_length_ms) # 语音片段结束时间
+        logging.info(f"segment end time:{end_time_item}")
 
         if begin_time_item < end_time:
             start_trim = (end_time_tmp - begin_time_item).total_seconds() * 1000
             end_trim = min((end_time - begin_time_item).total_seconds() * 1000, audio_item_length_ms)
-            logging.info(f"start_trim:{start_trim}")
-            logging.info(f"end_trim:{end_trim}")
             if start_trim < 0:
+                logging.info(f"sil before segment:{-1*start_trim:.0f}ms")
                 trim_tmp += start_trim
                 start_trim = 0
-            logging.info(f"trim_tmp:{trim_tmp}")
             if start_trim >= end_trim:
                 continue
             trimmed_audio = audio_item[start_trim:end_trim]
             combined += trimmed_audio
             end_time_tmp = end_time_item
+            logging.info(f"all sil before segment:{-1*trim_tmp:.0f}ms\n")
 
         output_segments.append({
             "sourceUuid": item["sourceUuid"],
@@ -97,7 +95,6 @@ def audio_selec(input_json):
             "outputSecond": int((begin_time_item - begin_time).seconds*1000 + start_trim + trim_tmp),
             "duration": int(end_trim - start_trim)
         })
-        logging.info()
 
     return combined, output_segments
 
