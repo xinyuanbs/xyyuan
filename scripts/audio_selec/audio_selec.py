@@ -1,23 +1,22 @@
-# 使用mino，没有使用http
-from pydub import AudioSegment
-import json
-from minio import Minio
+from flask import Flask, request, jsonify
 from io import BytesIO
 from datetime import datetime, timedelta
+from pydub import AudioSegment
+from minio import Minio
 from urllib.parse import urlparse
+import os
 
-def read_json(jsonPath):
-    with open(jsonPath, "r") as f:
-        input_json = json.load(f)
+app = Flask(__name__)
 
-    input_json["list"].sort(key=lambda x: datetime.strptime(x["beginTime"], "%Y-%m-%d %H:%M:%S.%f"))
-    return input_json
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def download_audio_from_minio(minio_url):
     parsed_url = urlparse(minio_url)
     path_parts = parsed_url.path.lstrip("/").split("/", 1)
     if len(path_parts) < 1:
-        print("Error: No bucket name found in the URL.")
+        # print("Error: No bucket name found in the URL.")
+        logging.error(f"Error: No bucket name found in the URL.")
         return None, 0
 
     host = f"{parsed_url.hostname}:{parsed_url.port}"
@@ -40,43 +39,51 @@ def download_audio_from_minio(minio_url):
         return audio, len(audio)
     
     except Exception as e:
-        print("Error:", e)
+        # print("Error:", e)
+        logging.error(f"Error downloading audio: {e}")
         return None, 0
 
-def format_time(dt):
-    return dt.strftime('%Y-%m-%d %H:%M:%S.%f')
+def datetime_to_str(dt):
+    return dt.strftime("%Y-%m-%d %H:%M:%S.%f")
+
+def str_to_datetime(str):
+    return datetime.strptime(str, "%Y-%m-%d %H:%M:%S.%f")
 
 def audio_selec(input_json):
-    begin_time = datetime.strptime(input_json["begin"], "%Y-%m-%d %H:%M:%S.%f")
-    end_time = datetime.strptime(input_json["end"], "%Y-%m-%d %H:%M:%S.%f")
+    begin_time = str_to_datetime(input_json["begin"])
+    end_time = str_to_datetime(input_json["end"])
     combined = AudioSegment.silent(duration=0)
 
     output_segments = []
     end_time_tmp = begin_time
 
     trim_tmp = 0
-    for item in input_json['list']:
-        file_path = item['filePath']
-        print(f"file_path:{file_path}")
-        begin_time_item = datetime.strptime(item['beginTime'], '%Y-%m-%d %H:%M:%S.%f') # 语音片段开始时间
-        audio_item, audio_item_length_ms = download_audio_from_minio(file_path)
-        # audio_item = AudioSegment.from_wav(file_path)
-        # audio_item_length_ms = len(audio_item)
+    for item in input_json["list"]:
+        file_path = item["filePath"]
+        # print(f"file_path:{file_path}")
+        logging.info(f"file_path:{file_path}")
+        begin_time_item = str_to_datetime(item["beginTime"]) # audio segment begin
+
+        # audio_item, audio_item_length_ms = download_audio_from_minio(file_path)
+        audio_item = AudioSegment.from_wav(file_path)
+        audio_item_length_ms = len(audio_item)
 
         if audio_item is None:
             return None, None
-        print(f"audio_item_length_ms:{audio_item_length_ms}")
+        logging.info(f"audio_item_length_ms:{audio_item_length_ms}")
         end_time_item = begin_time_item + timedelta(milliseconds=audio_item_length_ms) # 语音片段结束时间
 
         if begin_time_item < end_time:
             start_trim = (end_time_tmp - begin_time_item).total_seconds() * 1000
             end_trim = min((end_time - begin_time_item).total_seconds() * 1000, audio_item_length_ms)
-            print(f"start_trim:{start_trim}")
-            print(f"end_trim:{end_trim}")
+            logging.info(f"start_trim:{start_trim}")
+            logging.info(f"end_trim:{end_trim}")
             if start_trim < 0:
                 trim_tmp += start_trim
                 start_trim = 0
-            print(f"trim_tmp:{trim_tmp}")
+            logging.info(f"trim_tmp:{trim_tmp}")
+            if start_trim >= end_trim:
+                continue
             trimmed_audio = audio_item[start_trim:end_trim]
             combined += trimmed_audio
             end_time_tmp = end_time_item
@@ -85,25 +92,26 @@ def audio_selec(input_json):
             "sourceUuid": item["sourceUuid"],
             "filePath": item["filePath"],
             "sampleMachine": item["sampleMachine"],
-            "inputBeginTime": format_time(begin_time_item + timedelta(milliseconds=start_trim)),
-            "inputEndTime": format_time(begin_time_item + timedelta(milliseconds=end_trim)),
-            "outputBeginTime": format_time(begin_time_item + timedelta(milliseconds=start_trim + trim_tmp)),
-            "outputEndTime": format_time(begin_time_item + timedelta(milliseconds=end_trim + trim_tmp)),
+            "inputBeginTime": datetime_to_str(begin_time_item+timedelta(milliseconds=start_trim)),
+            "inputEndTime": datetime_to_str(begin_time_item+timedelta(milliseconds=end_trim)),
+            "outputSecond": int((begin_time_item - begin_time).seconds*1000 + start_trim + trim_tmp),
             "duration": int(end_trim - start_trim)
         })
-        print()
+        logging.info()
 
     return combined, output_segments
 
+# 上传音频到 MinIO
 def upload_audio_to_minio(audio, input_json):
-    if audio is None: return
+    if audio is None:
+        return {"error": "No audio to upload"}
     client = Minio(
         input_json["uploadHost"],
-        access_key = input_json["uploadUser"],
-        secret_key = input_json["uploadPasswd"],
-        secure = False
+        access_key=input_json["uploadUser"],
+        secret_key=input_json["uploadPasswd"],
+        secure=False
     )
-
+    
     bucket_name = input_json["uploadBucket"]
     object_name = input_json["uploadObject"]
     buffer = BytesIO()
@@ -118,30 +126,46 @@ def upload_audio_to_minio(audio, input_json):
             length=buffer.getbuffer().nbytes,
             content_type="audio/wav"
         )
-        print(f"File {object_name} uploaded successfully.")
+        logging.info(f"File {object_name} uploaded successfully.")
+        return {"message": "File uploaded successfully", "object_name": object_name}
     except Exception as err:
-        print(err)
+        logging.error(err)
+        return {"error": str(err)}
 
 def write_audio(audio, audio_path):
+    if os.path.dirname(audio_path) and not os.path.exists(os.path.dirname(audio_path)):
+        os.makedirs(os.path.dirname(audio_path), exist_ok=True)
     audio.export(audio_path, format="wav")
 
-def write_json(input_json, wav_list, output_path):
+# POST 接口：处理音频数据并上传到 MinIO
+@app.route("/process_audio", methods=["POST"])
+def process_audio():
+    input_json = request.json
+    if not input_json:
+        return jsonify({"error": "Invalid input, JSON data required"}), 400
+    input_json["list"].sort(key=lambda x: str_to_datetime(x["beginTime"]))
+
+    # 调用音频处理函数
+    audio, wav_list = audio_selec(input_json)
+    if audio is None:
+        return jsonify({"error": "Audio processing failed"}), 500
+    
+    # # 上传合成的音频到 MinIO
+    # upload_result = upload_audio_to_minio(audio, input_json)
+    # if "error" in upload_result:
+    #     return jsonify(upload_result), 500
+    write_audio(audio, input_json["uploadObject"])
+    
+    # 返回上传结果和音频元数据
     output_json = {
         "begin": input_json["begin"],
         "end": input_json["end"],
         "filePath": f"http://{input_json['uploadHost']}/{input_json['uploadBucket']}/{input_json['uploadObject']}",
-        "list": wav_list
+        "list": wav_list,
+        # "upload_result": upload_result
     }
 
-    with open(output_path, 'w') as json_file:
-        json.dump(output_json, json_file, indent=4)
+    return jsonify(output_json), 200
 
-def _main():
-    input_json = read_json("input.json")
-    audio, wav_list = audio_selec(input_json)
-    upload_audio_to_minio(audio, input_json)
-    # write_audio(audio, "combined_audio.wav")
-    write_json(input_json, wav_list, "output.json")
-
-if __name__ == '__main__':
-    _main()
+if __name__ == "__main__":
+    app.run(debug=True)
