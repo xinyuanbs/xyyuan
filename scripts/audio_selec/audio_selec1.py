@@ -135,7 +135,7 @@ def write_audio(audio, audio_path):
     audio.export(audio_path, format="wav")
 
 # POST 接口：处理音频数据并上传到 MinIO
-@app.route("/process_audio", methods=["POST"])
+@app.route("/process_audio1", methods=["POST"])
 def process_audio():
     input_json = request.json
     if not input_json:
@@ -165,4 +165,4 @@ def process_audio():
     return jsonify(output_json), 200
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)
