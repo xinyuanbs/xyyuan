@@ -1,47 +1,77 @@
 {
     "begin": "2024-10-28 12:00:00.000",
-    "end": "2024-10-28 12:15:00.000",
+    "end": "2024-10-28 12:00:30.000",
     "uploadHost": "192.168.1.151:41184",
     "uploadUser": "minioadmin",
     "uploadPasswd": "minioadmin",
     "uploadBucket": "bsyb",
-    "uploadObject": "20241028/combined_audio.wav",
+    "uploadObject": "test/km/combined/wav/20241028/audio.wav",
     "list": [
         {
             "sourceUuid": "1284393363537133526",
-            "filePath": "http://192.168.1.151:41184/bsyb/20241015/en_46_8k.wav",
+            "filePath": "http://192.168.1.151:41184/bsyb/test/km/wav/16k16bit/01_0123456789_0.wav",
             "sampleMachine": "m01",
             "beginTime": "2024-10-28 12:00:01.000"
         },
         {
             "sourceUuid": "1284393363537133526",
-            "filePath": "http://192.168.1.151:41184/bsyb/20241015/en_46_8k.wav",
+            "filePath": "http://192.168.1.151:41184/bsyb/test/km/wav/16k16bit/BAC009S0002W0122.wav",
             "sampleMachine": "m02",
-            "beginTime": "2024-10-28 12:00:04.000"
+            "beginTime": "2024-10-28 12:00:02.010"
         },
         {
             "sourceUuid": "1284393363537133526",
-            "filePath": "http://192.168.1.151:41184/bsyb/20241015/en_46_8k.wav",
-            "sampleMachine": "m01",
+            "filePath": "http://192.168.1.151:41184/bsyb/test/km/wav/16k16bit/BAC009S0003W0121.wav",
+            "sampleMachine": "m03",
+            "beginTime": "2024-10-28 12:00:03.100"
+        },
+        {
+            "sourceUuid": "1284393363537133526",
+            "filePath": "http://192.168.1.151:41184/bsyb/test/km/wav/16k16bit/BAC009S0004W0121.wav",
+            "sampleMachine": "m10",
+            "beginTime": "2024-10-28 12:00:10.600"
+        },
+        {
+            "sourceUuid": "1284393363537133526",
+            "filePath": "http://192.168.1.151:41184/bsyb/test/km/wav/16k16bit/BAC009S0005W0121.wav",
+            "sampleMachine": "m04",
             "beginTime": "2024-10-28 12:00:11.000"
         },
-        {
+                {
             "sourceUuid": "1284393363537133526",
-            "filePath": "http://192.168.1.151:41184/bsyb/20241015/en_46_8k.wav",
-            "sampleMachine": "m02",
-            "beginTime": "2024-10-28 12:00:08.000"
+            "filePath": "http://192.168.1.151:41184/bsyb/test/km/wav/16k16bit/BAC009S0006W0121.wav",
+            "sampleMachine": "m05",
+            "beginTime": "2024-10-28 12:00:12.500"
         },
         {
             "sourceUuid": "1284393363537133526",
-            "filePath": "http://192.168.1.151:41184/bsyb/20241015/en_46_8k.wav",
-            "sampleMachine": "m03",
-            "beginTime": "2024-10-28 12:00:02.000"
+            "filePath": "http://192.168.1.151:41184/bsyb/test/km/wav/16k16bit/BAC009S0168W0122.wav",
+            "sampleMachine": "m06",
+            "beginTime": "2024-10-28 12:00:13.000"
         },
         {
             "sourceUuid": "1284393363537133526",
-            "filePath": "http://192.168.1.151:41184/bsyb/20241015/en_46_8k.wav",
-            "sampleMachine": "m01",
-            "beginTime": "2024-10-28 12:00:10.000"
+            "filePath": "http://192.168.1.151:41184/bsyb/test/km/wav/16k16bit/BAC009S0168W0123.wav",
+            "sampleMachine": "m10",
+            "beginTime": "2024-10-28 12:00:17.000"
+        },
+        {
+            "sourceUuid": "1284393363537133526",
+            "filePath": "http://192.168.1.151:41184/bsyb/test/km/wav/16k16bit/BAC009S0168W0124.wav",
+            "sampleMachine": "m07",
+            "beginTime": "2024-10-28 12:00:25.000"
+        },
+        {
+            "sourceUuid": "1284393363537133526",
+            "filePath": "http://192.168.1.151:41184/bsyb/test/km/wav/16k16bit/BAC009S0168W0125.wav",
+            "sampleMachine": "m08",
+            "beginTime": "2024-10-28 12:00:26.000"
+        },
+        {
+            "sourceUuid": "1284393363537133526",
+            "filePath": "http://192.168.1.151:41184/bsyb/test/km/wav/16k16bit/BAC009S0168W0127.wav",
+            "sampleMachine": "m09",
+            "beginTime": "2024-10-28 12:00:26.100"
         }
     ]
 }

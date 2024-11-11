@@ -12,6 +12,7 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def download_audio_from_minio(minio_url):
+    logging.info(f"{minio_url}")
     parsed_url = urlparse(minio_url)
     path_parts = parsed_url.path.lstrip("/").split("/", 1)
     if len(path_parts) < 1:
@@ -47,22 +48,39 @@ def datetime_to_str(dt):
 def str_to_datetime(str):
     return datetime.strptime(str, "%Y-%m-%d %H:%M:%S.%f")
 
-def get_audio_length(file_path):
-    return len(AudioSegment.from_wav(file_path))
+# def get_audio_length(file_path):
+#     return len(AudioSegment.from_wav(file_path))
 
 def audio_selec(input_json):
     elements = [input_json["list"][0]]
     _, audio_length = download_audio_from_minio(input_json["list"][0]["filePath"])
-    max_allowed_time = str_to_datetime(input_json["list"][0]["beginTime"]) + timedelta(milliseconds=audio_length)
-    
-    for i in range(1, len(input_json["list"]) - 1):
-        if str_to_datetime(input_json["list"][i]["beginTime"]) < max_allowed_time:
-            i += 1
-        else:
-            elements.append(input_json["list"][i-1])
+    # audio_length = get_audio_length(input_json["list"][0]["filePath"])
+    front_end_time = str_to_datetime(input_json["list"][0]["beginTime"]) + timedelta(milliseconds=audio_length)
+    front_exceed_time = 0
+    front_index = 0
+
+    for i in range(1, len(input_json["list"])):
+        if input_json["list"][i]["beginTime"] < datetime_to_str(front_end_time):
             _, audio_length = download_audio_from_minio(input_json["list"][i]["filePath"])
-            max_allowed_time = str_to_datetime(input_json["list"][i]["beginTime"]) + timedelta(milliseconds=audio_length)
-    elements.append(input_json["list"][-1])
+            # audio_length = get_audio_length(input_json["list"][i]["filePath"])
+
+            current_end_time = str_to_datetime(input_json["list"][i]["beginTime"]) + timedelta(milliseconds=audio_length)
+            current_exceed_time = (current_end_time-front_end_time).total_seconds() * 1000
+            if current_exceed_time > front_exceed_time:
+                front_exceed_time = current_exceed_time
+                front_index = i
+
+        elif input_json["list"][i]["beginTime"] >= datetime_to_str(front_end_time):
+            elements.append(input_json["list"][front_index])
+            _, audio_length = download_audio_from_minio(input_json["list"][i]["filePath"])
+            # audio_length = get_audio_length(input_json["list"][front_index]["filePath"])
+            front_end_time = str_to_datetime(input_json["list"][front_index]["beginTime"]) + timedelta(milliseconds=audio_length)
+            front_exceed_time = 0
+            front_index = i
+    elements.append(input_json["list"][front_index])
+
+    for item in elements:
+        print(f"{item}")
 
     begin_time = str_to_datetime(input_json["begin"])
     end_time = str_to_datetime(input_json["end"])
@@ -145,18 +163,18 @@ def upload_audio_to_minio(audio, input_json):
             content_type="audio/wav"
         )
         logging.info(f"File {object_name} uploaded successfully.")
-        return {"message": "File uploaded successfully", "object_name": object_name}
+        return {"message": "File uploaded successfully", "filePath": object_name}
     except Exception as err:
         logging.error(err)
         return {"error": str(err)}
 
-def write_audio(audio, audio_path):
-    if os.path.dirname(audio_path) and not os.path.exists(os.path.dirname(audio_path)):
-        os.makedirs(os.path.dirname(audio_path), exist_ok=True)
-    audio.export(audio_path, format="wav")
+# def write_audio(audio, audio_path):
+#     if os.path.dirname(audio_path) and not os.path.exists(os.path.dirname(audio_path)):
+#         os.makedirs(os.path.dirname(audio_path), exist_ok=True)
+#     audio.export(audio_path, format="wav")
 
 # POST:process aduio and upload to MinIO
-@app.route("/process_audio", methods=["POST"])
+@app.route("/process_audio2", methods=["POST"])
 def process_audio():
     input_json = request.json
     if not input_json:
@@ -179,10 +197,10 @@ def process_audio():
         "fileSize": input_json["fileSize"],
         "filePath": f"http://{input_json['uploadHost']}/{input_json['uploadBucket']}/{input_json['uploadObject']}",
         "list": wav_list,
-        "upload_result": upload_result
+        "uploadResult": upload_result
     }
 
     return jsonify(output_json), 200
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5002, debug=True)
